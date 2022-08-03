@@ -134,6 +134,26 @@ import sun.misc.SharedSecrets;
  * @see     TreeMap
  * @see     Hashtable
  * @since   1.2
+ *
+ * Map接口的基于哈希表的实现。此实现提供所有可选的映射操作，并允许空值和空键。 （ HashMap类大致相当于Hashtable ，除了它是不同步的并且允许空值。）这个类不保证映射的顺序；特别是，它不保证订单会随着时间的推移保持不变。
+ * 此实现为基本操作（ get和put ）提供恒定时间性能，假设哈希函数将元素正确地分散在桶中。对集合视图的迭代需要的时间与HashMap实例的“容量”（桶的数量）加上它的大小（键值映射的数量）成正比。因此，如果迭代性能很重要，则不要将初始容量设置得太高（或负载因子太低），这一点非常重要。
+ * HashMap的实例有两个影响其性能的参数：初始容量和负载因子。容量是哈希表中的桶数，初始容量只是哈希表创建时的容量。负载因子是哈希表在其容量自动增加之前允许达到的程度的度量。当哈希表中的条目数超过负载因子和当前容量的乘积时，对哈希表进行重新哈希（即重建内部数据结构），使哈希表的桶数大约增加一倍。
+ * 作为一般规则，默认负载因子 (.75) 在时间和空间成本之间提供了良好的折衷。较高的值会减少空间开销，但会增加查找成本（反映在HashMap类的大多数操作中，包括get和put ）。在设置其初始容量时，应考虑映射中的预期条目数及其负载因子，以尽量减少重新哈希操作的次数。如果初始容量大于最大条目数除以负载因子，则不会发生重新哈希操作。
+ * 如果要在一个HashMap实例中存储许多映射，则创建具有足够大容量的映射将比让它根据需要执行自动重新散列以增加表来更有效地存储映射。请注意，使用具有相同hashCode()的多个键是降低任何哈希表性能的可靠方法。为了改善影响，当键是Comparable时，此类可以使用键之间的比较顺序来帮助打破平局。
+ * 请注意，此实现不同步。如果多个线程同时访问一个哈希映射，并且至少有一个线程在结构上修改了映射，则必须在外部进行同步。 （结构修改是添加或删除一个或多个映射的任何操作；仅更改与实例已包含的键关联的值不是结构修改。）这通常通过在自然封装映射的某个对象上同步来完成.如果不存在这样的对象，则应使用Collections.synchronizedMap方法“包装”地图。这最好在创建时完成，以防止对地图的意外不同步访问：
+ *      Map m = Collections.synchronizedMap(new HashMap(...));
+ * 所有此类的“集合视图方法”返回的迭代器都是快速失败的：如果在创建迭代器后的任何时间对映射进行结构修改，除了通过迭代器自己的remove方法之外，迭代器将抛出ConcurrentModificationException .因此，面对并发修改，迭代器快速而干净地失败，而不是在未来不确定的时间冒任意的、非确定性的行为。
+ * 请注意，不能保证迭代器的快速失败行为，因为一般来说，在存在不同步的并发修改的情况下，不可能做出任何硬保证。快速失败的迭代器会尽最大努力抛出ConcurrentModificationException 。因此，编写一个依赖于这个异常的正确性的程序是错误的：迭代器的快速失败行为应该只用于检测错误。
+ * 此类是Java Collections Framework的成员。
+ * 自从：
+ * 1.2
+ * 也可以看看：
+ * Object.hashCode() , Collection , Map , TreeMap , Hashtable
+ * 作者：
+ * 道格·莉亚、乔什·布洛赫、亚瑟·范霍夫、尼尔·加夫特
+ * 类型参数：
+ * <K> – 此映射维护的键的类型
+ * <V> – 映射值的类型
  */
 public class HashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, Cloneable, Serializable {
@@ -232,6 +252,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The default initial capacity - MUST be a power of two.
+     * 默认初始容量 - 必须是 2 的幂。
      */
     static final int DEFAULT_INITIAL_CAPACITY = 1 << 4; // aka 16
 
@@ -239,11 +260,13 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The maximum capacity, used if a higher value is implicitly specified
      * by either of the constructors with arguments.
      * MUST be a power of two <= 1<<30.
+     * 最大容量，如果一个更高的值由任何一个带参数的构造函数隐式指定时使用。必须是 2 <= 1<<30 的幂。
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
      * The load factor used when none specified in constructor.
+     * 构造函数中未指定时使用的负载因子。
      */
     static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
@@ -254,6 +277,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * than 2 and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     * 使用树而不是列表的 bin 计数阈值。将元素添加到至少具有这么多节点的 bin 时，
+     * bin将转换为树。该值必须大于 2 并且应该至少为 8，以便与树移除中关于在收缩时转换回普通 bin 的假设相吻合。
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -261,6 +286,8 @@ public class HashMap<K,V> extends AbstractMap<K,V>
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
+     * 在调整大小操作期间 untreeifying（拆分）bin 的 bin 计数阈值。
+     * 应小于 TREEIFY_THRESHOLD，并且最多 6 以在移除时进行收缩检测。
      */
     static final int UNTREEIFY_THRESHOLD = 6;
 
