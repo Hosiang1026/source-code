@@ -1,0 +1,18 @@
+# Package Files #
+*.jar
+*.war
+*.ear
+*.log
+*.lck
+.idea/
+*.iml
+target/
+out/
+*.class
+
+# Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
+!/.mvn/wrapper/maven-wrapper.jar
+logs/
+
+# Mac Files #
+.DS_Store
