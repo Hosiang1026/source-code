@@ -482,6 +482,12 @@ public class HashMap<K,V>
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     * 将指定的值与此映射中的指定键相关联。如果映射先前包含键的映射，则替换旧值。
+     * 参数：
+     * key – 与指定值关联的键
+     * value – 与指定键关联的值
+     * 回报：
+     * 与key关联的前一个值，如果没有key映射，则返回 null 。 （返回null还可以指示映射先前将null与key关联。）
      */
     public V put(K key, V value) {
         if (table == EMPTY_TABLE) {
@@ -508,6 +514,7 @@ public class HashMap<K,V>
 
     /**
      * Offloaded version of put for null keys
+     * 空键 put 的卸载版本
      */
     private V putForNullKey(V value) {
         for (Entry<K,V> e = table[0]; e != null; e = e.next) {
@@ -528,6 +535,8 @@ public class HashMap<K,V>
      * pseudoconstructors (clone, readObject).  It does not resize the table,
      * check for comodification, etc.  It calls createEntry rather than
      * addEntry.
+     * 构造函数和伪构造函数（clone、readObject）使用此方法代替 put。
+     * 它不会调整表大小、检查共修改等。它调用 createEntry 而不是 addEntry。
      */
     private void putForCreate(K key, V value) {
         int hash = null == key ? 0 : hash(key);
